@@ -20,7 +20,17 @@ class WorkOrderController extends Controller
             'status' => 'nullable'
         ]);
 
-        $date = $request->date_request ?? null;
+        /**
+         * LOGIKA TANGGAL:
+         * - Kalau pertama kali buka (tidak ada query param date_request)
+         *   → otomatis pakai hari ini
+         * - Kalau user kirim date_request (meskipun kosong)
+         *   → pakai value tersebut
+         */
+        $date = $request->has('date_request')
+            ? $request->date_request
+            : now()->toDateString();
+
         $statusFilter = $request->status ?? null;
 
         try {
@@ -119,6 +129,7 @@ class WorkOrderController extends Controller
             'id_dept' => 'DP011',
         ];
 
+        // Kalau tanggal kosong → tidak kirim date_request → tampil semua
         if (!empty($date)) {
             $params['date_request'] = $date;
         }
@@ -161,11 +172,10 @@ class WorkOrderController extends Controller
             'sub_departemen' => $wo['sub_departemen'] ?? null,
             'departemen_request' => $wo['departemen_request'] ?? null,
 
-            // ✅ SESUAI API
             'requestor' => $wo['name_request'] ?? 'Tidak diketahui',
             'asset' => !empty($wo['asset'])
-    ? Str::title($wo['asset'])
-    : 'Tidak ada asset',
+                ? Str::title($wo['asset'])
+                : 'Tidak ada asset',
 
             'work_location' => $wo['work_location'] ?? null,
 

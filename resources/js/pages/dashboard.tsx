@@ -65,12 +65,32 @@ return localStorage.getItem('wo_sound') === 'true';
 });
 const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
+const getSummaryStatus = (status:number) => {
+
+if(status === 0 || status === 1){
+return "Pending"
+}
+
+if(status === 2 || status === 3){
+return "Progress"
+}
+
+if(status === 4 || status === 5){
+return "Completed"
+}
+
+return "-"
+
+}
+
 useEffect(() => {
+
 const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
 
 if (navEntries.length > 0 && navEntries[0].type === "reload") {
 window.location.href = '/dashboard';
 }
+
 }, []);
 
 useEffect(() => {
@@ -208,10 +228,15 @@ value={status}
 onChange={(e) => setStatus(e.target.value)}
 className="w-full rounded-lg px-3 py-2 border border-green-800 bg-white text-black"
 >
+
 <option value="">Semua Status</option>
-<option value="0">Pending</option>
-<option value="1">In Progress</option>
-<option value="2,3,4">Completed</option>
+<option value="0">Draft</option>
+<option value="1">Departemen Request</option>
+<option value="2">Departemen Recipient</option>
+<option value="3">Execute Departemen Recipient</option>
+<option value="4">Checked Departemen Recipient</option>
+<option value="5">Checked Departemen Request</option>
+
 </select>
 
 <button
@@ -247,28 +272,29 @@ Tampilkan
 {workorders.map((wo, index)=>{
 
 const isNewest = index === 0;
+const summaryStatus = getSummaryStatus(wo.status);
 
 return (
 
 <div
 key={wo.id}
-className={`relative bg-white border rounded-lg shadow-md p-3 text-[11px] flex flex-col justify-between
+className={`relative bg-white border rounded-lg shadow-md p-3 text-[11px] flex flex-col justify-between transition duration-200 hover:shadow-lg hover:-translate-y-1
 ${isNewest ? "border-emerald-500 ring-1 ring-emerald-200" : ""}
 `}
 >
 
 {/* HEADER */}
 
-<div className="flex justify-between items-center border-b pb-1">
+<div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-2">
 
 <div className="flex items-center gap-2">
 
-<span className="font-bold text-[12.5px] text-gray-900 tracking-wide">
+<span className="font-bold text-[14px] text-gray-900 tracking-wide">
 {wo.id_wo}
 </span>
 
 {isNewest && (
-<span className="text-[9px] font-bold px-2 py-[2px] bg-emerald-500 text-white rounded">
+<span className="text-[10px] font-semibold px-2 py-[2px] bg-emerald-500 text-white rounded-full">
 NEW
 </span>
 )}
@@ -278,46 +304,85 @@ NEW
 <span
 className={`text-[10px] font-semibold px-2 py-[2px] rounded-full
 ${
-wo.status_text === "Pending"
-? "bg-yellow-400 text-yellow-900"
-: wo.status_text === "In Progress"
-? "bg-blue-500 text-white"
-: "bg-green-500 text-white"
+summaryStatus === "Pending"
+? "bg-yellow-100 text-yellow-800"
+: summaryStatus === "Progress"
+? "bg-blue-100 text-blue-800"
+: summaryStatus === "Completed"
+? "bg-green-100 text-green-800"
+: "bg-gray-300 text-gray-800"
 }`}
 >
-{wo.status_text}
+{summaryStatus}
 </span>
 
 </div>
 
 {/* CONTENT */}
 
-<div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-1 flex-grow">
+<div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-1 flex-grow">
 
 <div>
-<p className="font-bold text-gray-800 text-[12px]">WORK ORDER INFO</p>
-<p>Priority: {wo.priority_text}</p>
+
+<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+WORK ORDER INFO
+</p>
+
+<p>
+Priority:
+<span
+className={`ml-1 px-2 py-[1px] rounded text-white text-[10px]
+${
+wo.priority === 1
+? "bg-red-500"
+: wo.priority === 2
+? "bg-blue-500"
+: "bg-gray-500"
+}`}
+>
+{wo.priority_text}
+</span>
+</p>
+
+<p>Status: {wo.status_text}</p>
+
 <p>Umur: {wo.umur_wo} hari</p>
 <p>Durasi: {wo.duration_text ?? '-'}</p>
+
 </div>
 
 <div>
-<p className="font-bold text-gray-800 text-[12px]">JOB INFORMATION</p>
+
+<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+JOB INFORMATION
+</p>
+
 <p className="break-words">Job: {wo.job_name}</p>
 <p className="break-words">Deskripsi: {wo.job_description}</p>
 <p>Asset: {wo.asset ?? '-'}</p>
+
 </div>
 
 <div>
-<p className="font-bold text-gray-800 text-[12px] mt-1">DEPARTMENT</p>
+
+<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+DEPARTMENT
+</p>
+
 <p className="break-words">Requestor: {wo.requestor}</p>
 <p className="break-words">Departemen Request: {wo.departemen_request ?? '-'}</p>
+
 </div>
 
 <div>
-<p className="font-bold text-gray-800 text-[12px] mt-1">LOKASI & PIC</p>
+
+<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+LOKASI & PIC
+</p>
+
 <p className="break-words">Lokasi: {wo.work_location}</p>
 <p>PIC: {wo.pic_name ?? '-'}</p>
+
 </div>
 
 </div>
@@ -326,22 +391,24 @@ wo.status_text === "Pending"
 
 <div className="border-t pt-1">
 
-<p className="font-bold text-gray-700">TIMELINE</p>
+<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+TIMELINE
+</p>
 
 <div className="grid grid-cols-3 text-center">
 
 <div>
-<p className="text-gray-500">Req</p>
+<p className="text-gray-800">Req</p>
 <p>{wo.date_request_formatted}</p>
 </div>
 
 <div>
-<p className="text-gray-500">Start</p>
+<p className="text-gray-800">Start</p>
 <p>{wo.work_started_formatted ?? '-'}</p>
 </div>
 
 <div>
-<p className="text-gray-500">Done</p>
+<p className="text-gray-800">Done</p>
 <p>{wo.work_completed_formatted ?? '-'}</p>
 </div>
 

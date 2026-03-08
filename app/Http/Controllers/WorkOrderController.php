@@ -20,13 +20,6 @@ class WorkOrderController extends Controller
             'status' => 'nullable'
         ]);
 
-        /**
-         * LOGIKA TANGGAL:
-         * - Kalau pertama kali buka (tidak ada query param date_request)
-         *   → otomatis pakai hari ini
-         * - Kalau user kirim date_request (meskipun kosong)
-         *   → pakai value tersebut
-         */
         $date = $request->has('date_request')
             ? $request->date_request
             : now()->toDateString();
@@ -34,6 +27,7 @@ class WorkOrderController extends Controller
         $statusFilter = $request->status ?? null;
 
         try {
+
             $rawData = $this->fetchWorkOrders($date);
 
             $workorders = collect($rawData)
@@ -44,10 +38,14 @@ class WorkOrderController extends Controller
             $workorders = $this->applyStatusFilter($workorders, $statusFilter);
 
             // ================= STATISTIK =================
+
             $totalWO = $workorders->count();
-            $totalPending = $workorders->where('status', 0)->count();
-            $totalProgress = $workorders->where('status', 1)->count();
-            $totalDone = $workorders->whereIn('status', [2,3,4])->count();
+
+            $totalPending = $workorders->whereIn('status', [0,1])->count();
+
+            $totalProgress = $workorders->whereIn('status', [2,3])->count();
+
+            $totalDone = $workorders->whereIn('status', [4,5])->count();
 
             $completionRate = $totalWO > 0
                 ? round(($totalDone / $totalWO) * 100, 2)
@@ -98,6 +96,7 @@ class WorkOrderController extends Controller
         $statusFilter = $request->status ?? null;
 
         try {
+
             $rawData = $this->fetchWorkOrders($date);
 
             $workorders = collect($rawData)
@@ -129,7 +128,6 @@ class WorkOrderController extends Controller
             'id_dept' => 'DP011',
         ];
 
-        // Kalau tanggal kosong → tidak kirim date_request → tampil semua
         if (!empty($date)) {
             $params['date_request'] = $date;
         }
@@ -163,8 +161,10 @@ class WorkOrderController extends Controller
         }
 
         return [
+
             'id' => $wo['id'] ?? null,
             'id_wo' => $wo['id_wo'] ?? null,
+
             'job_name' => $wo['job_name'] ?? null,
             'job_description' => strip_tags($wo['job_description'] ?? ''),
 
@@ -173,40 +173,51 @@ class WorkOrderController extends Controller
             'departemen_request' => $wo['departemen_request'] ?? null,
 
             'requestor' => $wo['name_request'] ?? 'Tidak diketahui',
+
             'asset' => !empty($wo['asset'])
                 ? Str::title($wo['asset'])
                 : 'Tidak ada asset',
 
             'work_location' => $wo['work_location'] ?? null,
 
-            'status' => $wo['status'] ?? null,
-            'status_text' => $this->mapStatus($wo['status'] ?? null),
+            // STATUS
+            'status' => $wo['track_status'] ?? null,
+            'status_text' => $this->mapStatus($wo['track_status'] ?? null),
 
+            // PRIORITY
             'priority' => $wo['priority'] ?? null,
             'priority_text' => $this->mapPriority($wo['priority'] ?? null),
 
             'pic_name' => $wo['description_of_pic_name'] ?? 'Belum ada PIC',
 
+            // DATE
             'date_request' => $wo['date_request'] ?? null,
+
             'date_request_formatted' => !empty($wo['date_request'])
                 ? Carbon::parse($wo['date_request'])->translatedFormat('d M Y, H:i')
                 : null,
 
+            // UMUR WO
             'umur_wo' => !empty($wo['date_request'])
                 ? Carbon::parse($wo['date_request'])->startOfDay()
                     ->diffInDays(now()->startOfDay())
                 : null,
 
+            // WORK START
             'work_started' => $workStarted,
+
             'work_started_formatted' => !empty($workStarted)
                 ? Carbon::parse($workStarted)->translatedFormat('d M Y, H:i')
                 : null,
 
+            // WORK DONE
             'work_completed' => $workCompleted,
+
             'work_completed_formatted' => !empty($workCompleted)
                 ? Carbon::parse($workCompleted)->translatedFormat('d M Y, H:i')
                 : null,
 
+            // DURATION
             'duration_text' => $durationText,
         ];
     }
@@ -218,11 +229,18 @@ class WorkOrderController extends Controller
     {
         if ($statusFilter !== null && $statusFilter !== '') {
 
-            if ($statusFilter === '2,3,4') {
-                return $collection->whereIn('status', [2,3,4])->values();
+            if (str_contains($statusFilter, ',')) {
+
+                $statuses = explode(',', $statusFilter);
+
+                return $collection
+                    ->whereIn('status', $statuses)
+                    ->values();
             }
 
-            return $collection->where('status', (int)$statusFilter)->values();
+            return $collection
+                ->where('status', (int)$statusFilter)
+                ->values();
         }
 
         return $collection;
@@ -233,13 +251,16 @@ class WorkOrderController extends Controller
      */
     private function calculateAverageDuration($workorders)
     {
-        $completed = $workorders->whereIn('status', [2,3,4]);
+        $completed = $workorders->whereIn('status', [4,5]);
 
         $totalMinutes = $completed->sum(function ($wo) {
+
             if (!empty($wo['work_started']) && !empty($wo['work_completed'])) {
+
                 return Carbon::parse($wo['work_started'])
                     ->diffInMinutes(Carbon::parse($wo['work_completed']));
             }
+
             return 0;
         });
 
@@ -262,9 +283,12 @@ class WorkOrderController extends Controller
     private function mapStatus($status)
     {
         return match ($status) {
-            0 => 'Pending',
-            1 => 'In Progress',
-            2,3,4 => 'Completed',
+            0 => 'Draft',
+            1 => 'Departemen Request',
+            2 => 'Departemen Recipient',
+            3 => 'Execute Departemen Recipient',
+            4 => 'Checked Departemen Recipient',
+            5 => 'Checked Departemen Request',
             default => '-'
         };
     }
@@ -272,9 +296,9 @@ class WorkOrderController extends Controller
     private function mapPriority($priority)
     {
         return match ($priority) {
-            1 => 'Low',
-            2 => 'Medium',
-            3 => 'High',
+            1 => 'Urgent',
+            2 => 'Routine',
+            3 => 'Others',
             default => '-'
         };
     }

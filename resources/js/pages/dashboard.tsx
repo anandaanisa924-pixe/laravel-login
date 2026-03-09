@@ -244,7 +244,7 @@ onClick={()=>router.get('/dashboard',{
 date_request:date,
 status:status
 })}
-className="bg-white text-green-900 font-bold py-1 rounded w-full text-sm"
+className="bg-white text-green-900 font-bold py-1 rounded w-full text-sm hover:bg-green-400 hover:text-green-900 transition"
 >
 Tampilkan
 </button>
@@ -257,7 +257,7 @@ Tampilkan
 
 {/* RIGHT PANEL */}
 
-<div className="w-2/3 h-screen overflow-y-auto p-4">
+<div className="w-2/3 h-screen overflow-y-auto px-4 pt-2 pb-4">
 
 {workorders.length === 0 ? (
 
@@ -267,7 +267,7 @@ Tampilkan
 
 ) : (
 
-<div className="grid grid-cols-2 gap-4" style={{gridAutoRows:"48vh"}}>
+<div className="grid grid-cols-2 gap-4" style={{gridAutoRows:"minmax(48vh, auto)"}}>
 
 {workorders.map((wo, index)=>{
 
@@ -278,8 +278,8 @@ return (
 
 <div
 key={wo.id}
-className={`relative bg-white border rounded-lg shadow-md p-3 text-[11px] flex flex-col justify-between transition duration-200 hover:shadow-lg hover:-translate-y-1
-${isNewest ? "border-emerald-500 ring-1 ring-emerald-200" : ""}
+className={`relative bg-white border rounded-lg shadow-md p-3 text-[11px] flex flex-col justify-between transition duration-200 ease-out hover:shadow-xl hover:-translate-y-1
+${isNewest ? "border-l-4 border-l-emerald-500 pl-2 bg-emerald-50" : ""}
 `}
 >
 
@@ -289,7 +289,7 @@ ${isNewest ? "border-emerald-500 ring-1 ring-emerald-200" : ""}
 
 <div className="flex items-center gap-2">
 
-<span className="font-bold text-[14px] text-gray-900 tracking-wide">
+<span className="font-semibold text-[14px] text-gray-900 tracking-wide">
 {wo.id_wo}
 </span>
 
@@ -302,18 +302,18 @@ NEW
 </div>
 
 <span
-className={`text-[10px] font-semibold px-2 py-[2px] rounded-full
-${
-summaryStatus === "Pending"
-? "bg-yellow-100 text-yellow-800"
-: summaryStatus === "Progress"
-? "bg-blue-100 text-blue-800"
-: summaryStatus === "Completed"
-? "bg-green-100 text-green-800"
-: "bg-gray-300 text-gray-800"
-}`}
+  className={`text-[11px] font-bold px-2.5 py-[3px] rounded-full tracking-wide shadow-sm
+  ${
+    summaryStatus === "Pending"
+      ? "bg-yellow-100 text-yellow-800"
+      : summaryStatus === "Progress"
+      ? "bg-blue-100 text-blue-800"
+      : summaryStatus === "Completed"
+      ? "bg-green-100 text-green-800"
+      : "bg-gray-300 text-gray-800"
+  }`}
 >
-{summaryStatus}
+  {summaryStatus}
 </span>
 
 </div>
@@ -324,24 +324,24 @@ summaryStatus === "Pending"
 
 <div>
 
-<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+<p className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide mb-1">
 WORK ORDER INFO
 </p>
 
 <p>
-Priority:
-<span
-className={`ml-1 px-2 py-[1px] rounded text-white text-[10px]
-${
-wo.priority === 1
-? "bg-red-500"
-: wo.priority === 2
-? "bg-blue-500"
-: "bg-gray-500"
-}`}
->
-{wo.priority_text}
-</span>
+  Priority:
+  <span
+    className={`ml-1 text-[10px] font-semibold
+    ${
+      wo.priority === 1
+        ? "text-red-600"
+        : wo.priority === 2
+        ? "text-blue-600"
+        : "text-gray-600"
+    }`}
+  >
+    {wo.priority_text}
+  </span>
 </p>
 
 <p>Status: {wo.status_text}</p>
@@ -353,7 +353,7 @@ wo.priority === 1
 
 <div>
 
-<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+<p className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide mb-1">
 JOB INFORMATION
 </p>
 
@@ -365,7 +365,7 @@ JOB INFORMATION
 
 <div>
 
-<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+<p className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide mb-1">
 DEPARTMENT
 </p>
 
@@ -376,7 +376,7 @@ DEPARTMENT
 
 <div>
 
-<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+<p className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide mb-1">
 LOKASI & PIC
 </p>
 
@@ -389,26 +389,26 @@ LOKASI & PIC
 
 {/* TIMELINE */}
 
-<div className="border-t pt-1">
+<div className="border-t border-gray-200 pt-2">
 
-<p className="text-[11px] font-semibold text-gray-800 uppercase tracking-wide">
+<p className="text-[11px] font-semibold text-slate-800 uppercase tracking-wide mb-1">
 TIMELINE
 </p>
 
 <div className="grid grid-cols-3 text-center">
 
 <div>
-<p className="text-gray-800">Req</p>
+<p className="text-slate-800 font-semibold">Req</p>
 <p>{wo.date_request_formatted}</p>
 </div>
 
 <div>
-<p className="text-gray-800">Start</p>
+<p className="text-slate-800 font-semibold">Start</p>
 <p>{wo.work_started_formatted ?? '-'}</p>
 </div>
 
 <div>
-<p className="text-gray-800">Done</p>
+<p className="text-slate-800 font-semibold">Done</p>
 <p>{wo.work_completed_formatted ?? '-'}</p>
 </div>
 

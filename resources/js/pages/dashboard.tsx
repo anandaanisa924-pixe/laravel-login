@@ -60,9 +60,12 @@ const [date, setDate] = useState(selectedDate || '');
 const [status, setStatus] = useState(selectedStatus || '');
 
 const [prevTotal, setPrevTotal] = useState(totalWO);
+const [highlightNewest, setHighlightNewest] = useState(false);
+
 const [soundEnabled, setSoundEnabled] = useState(() => {
 return localStorage.getItem('wo_sound') === 'true';
 });
+
 const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
 const getSummaryStatus = (status:number) => {
@@ -114,12 +117,18 @@ return () => clearInterval(interval);
 
 useEffect(() => {
 
-if (!soundEnabled) return;
-
 if (totalWO > prevTotal) {
 
+setHighlightNewest(true);
+
+if (soundEnabled) {
 const audio = new Audio('/sounds/notification.wav');
 audio.play();
+}
+
+setTimeout(() => {
+setHighlightNewest(false);
+}, 5000);
 
 }
 
@@ -280,9 +289,9 @@ return (
 key={wo.id}
 className={`relative bg-white border rounded-lg shadow-md p-3 text-[11px] flex flex-col justify-between transition duration-200 ease-out hover:shadow-xl hover:-translate-y-1
 ${isNewest ? "border-l-4 border-l-emerald-500 pl-2 bg-emerald-50" : ""}
+${isNewest && highlightNewest ? "animate-pulse ring-4 ring-emerald-400 shadow-2xl" : ""}
 `}
 >
-
 {/* HEADER */}
 
 <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-2">
